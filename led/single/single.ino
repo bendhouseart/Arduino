@@ -6,7 +6,7 @@
 #define COLOR_ORDER	GRB
 #define CHIPSET		WS2811
 #define NUM_LEDS	62
-#define FRAMES_PER_SECOND 60
+#define FRAMES_PER_SECOND 60 
 #define threshold 80
 
 // Connections to Spectrum Analyser
@@ -95,31 +95,42 @@ void Scale_Frequencies(int* leftIn, int* rightIn, int* leftOut, int* rightOut, i
 	}
 } 
 
-void Light(int* scaledLeft, int* scaledRight, int bandSize){
+void Light(int* left, int* right, int* scaledLeft, int* scaledRight, int bandSize){
 	int step = bandSize;
 	int color = 0;
+	Scale_Frequencies(left, right, scaledLeft, scaledRight, bandSize);
 	for (int i = 0; i < 7; i++){
 		color = i*32;
 		for (int j=(i*bandSize); j < ((i+1)*bandSize); j++){
 			if (j < (scaledLeft[i] + (i*bandSize))){
-				leds[j] = CHSV(color, 255, 255);
+				leds[j] = CHSV(color, 255, 200);
 			}
 			if (j >= (scaledLeft[i] + (i*bandSize))){
 				leds[j] = CRGB::Black;
 			}
-			Serial.print(i);
-			Serial.print('\t');
-			Serial.print(scaledLeft[i]);
-			Serial.print('\t');
-			Serial.print(j);
-			Serial.print('\n');
 		}
 	
-	FastLED.show();
 	}
-
+	FastLED.show();
 
 }
+
+int oldL[7] = {0,0,0,0,0,0,0};
+int oldR[7] = {0,0,0,0,0,0,0};
+int newR[7] = {0,0,0,0,0,0,0};
+int newL[7] = {0,0,0,0,0,0,0};
+int presR[7] = {0,0,0,0,0,0,0};
+int presL[7] = {0,0,0,0,0,0,0};
+
+void Smoothe(int* oldL, int* oldR, int* presL , int* presR, int* newL, int* newR){
+	int interval = 14;
+	for (int i=0; i < 7; i++) {
+		newL[i] = newL[i] + presL[i]/interval - oldL[i]/interval;
+		newR[i] = newR[i] + presR[i]/interval - oldR[i]/interval;
+		oldL[i] = newL[i];
+		oldR[i] = newR[i];
+	}
+} 
 
 void setup() {
 	// Set Freq. Anal. pin configs.
@@ -148,11 +159,17 @@ void setup() {
 	randomSeed(analogRead(0));
 }
 
+unsigned long time = millis();
+unsigned long interval = 10;
+unsigned long currentTime = millis();
+
 void loop() {
 	Read_Frequencies();
-	//Print_Frequencies(frequenciesLeft, frequenciesRight);
-	Scale_Frequencies(frequenciesLeft, frequenciesRight, scaledLeft, scaledRight, bandSize);
-	Serial.print('\n');
-	//Print_Frequencies(scaledLeft, scaledRight);
-	Light(scaledLeft, scaledRight, bandSize); 
+	Smoothe(oldL, oldR, frequenciesLeft, frequenciesRight, newL, newR);
+	//unsigned long currentMillis = millis();
+    Serial.print(currentTime);
+    if (millis() > currentTime + interval){
+        Light(newL, newR, scaledLeft, scaledRight, bandSize);
+        currentTime = millis();
+    }
 } 
