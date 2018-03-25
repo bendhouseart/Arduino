@@ -5,7 +5,7 @@
 #define LED_PIN		13
 #define COLOR_ORDER	GRB
 #define CHIPSET		WS2811
-#define NUM_LEDS	62
+#define NUM_LEDS	79
 #define FRAMES_PER_SECOND 60 
 #define threshold 80
 
@@ -41,19 +41,20 @@ void Read_Frequencies() {
 	for (int i = 0; i < 7; i++){
 		frequenciesLeft[i] = analogRead(DC_One);
 		frequenciesRight[i] = analogRead(DC_Two);
-		// discarding noise
+/* 		// discarding noise
 		if (frequenciesLeft[i] < threshold){
 			frequenciesLeft[i] = threshold;
 		}
 		if (frequenciesRight[i] < threshold){
 			frequenciesRight[i] = threshold;
-		}	
+		}	 */
 		// making them mono
-		//frequenciesLeft[i] = (frequenciesLeft[i] + frequenciesRight[i])/2;
+		frequenciesLeft[i] = (frequenciesLeft[i] + frequenciesRight[i])/2;
+        digitalWrite(STROBE, HIGH);
+        digitalWrite(STROBE, LOW);
 	}
 	
-	digitalWrite(STROBE, HIGH);
-	digitalWrite(STROBE, LOW);
+	
 }
 
 void Print_Frequencies(int* frequenciesLeft,  int* frequenciesRight) {
@@ -99,8 +100,17 @@ void Light(int* left, int* right, int* scaledLeft, int* scaledRight, int bandSiz
 	int step = bandSize;
 	int color = 0;
 	Scale_Frequencies(left, right, scaledLeft, scaledRight, bandSize);
+    Print_Frequencies(scaledLeft, scaledRight);
 	for (int i = 0; i < 7; i++){
-		color = i*32;
+        // Uncomment below line for rainbow of colors
+		//color = i*32;
+        
+        // Uncomment below for alternating two colors up and down strip
+        if (i%2 == 0){
+            color = 32;
+        } else {
+            color = 0;
+        }
 		for (int j=(i*bandSize); j < ((i+1)*bandSize); j++){
 			if (j < (scaledLeft[i] + (i*bandSize))){
 				leds[j] = CHSV(color, 255, 200);
@@ -165,9 +175,10 @@ unsigned long currentTime = millis();
 
 void loop() {
 	Read_Frequencies();
+    Print_Frequencies(frequenciesLeft, frequenciesRight);
+    
 	Smoothe(oldL, oldR, frequenciesLeft, frequenciesRight, newL, newR);
-	//unsigned long currentMillis = millis();
-    Serial.print(currentTime);
+
     if (millis() > currentTime + interval){
         Light(newL, newR, scaledLeft, scaledRight, bandSize);
         currentTime = millis();
