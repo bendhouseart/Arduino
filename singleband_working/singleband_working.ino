@@ -29,7 +29,7 @@ long baud = 1000000;
 
 //Defining Timer to rotate through bands on a single LED strip
 long previousMillis = 0;
-long interval = 30000;
+long interval = 10000;
 int band_interval = 0; //to be used in timer
 long timer2 = 0;
 long interval2 = 100;
@@ -114,10 +114,16 @@ void loop() {
     Scale_Band(Frequencies_One, NUM_LEDS, Scaled_Channel);
     for (int k = 0; k < 7; k++){
       new_average[k] = present_average[k] + Scaled_Channel[k]/n_Samples - last_average[k]/n_Samples;
-      //Serial.print(new_average[k]);
-      //Serial.print("\t");
+      Serial.print(new_average[k]);
+      Serial.print("\t");
+      Serial.print(present_average[k]);
+      Serial.print("\t");
+      Serial.print(Scaled_Channel[k]/n_Samples);
+      Serial.print("\t");
+      Serial.print(last_average[k]/n_Samples);
+      Serial.print("\t");
     }
-    //Serial.print("\n");
+    Serial.print("\n");
     fArry_Cpy(present_average, last_average);
     fArry_Cpy(new_average, present_average);
     Light(new_average, band_interval, color);
