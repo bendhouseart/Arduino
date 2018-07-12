@@ -193,27 +193,16 @@ void setup() {
 unsigned long time = millis();
 unsigned long interval = 10;
 unsigned long currentTime = millis();
-<<<<<<< HEAD
 int color = 0;
-=======
 
 
-// Main Loop, does all the work.
->>>>>>> d27a8afa24e47699ec575a1cbdaac2c7ce3d4cf8
 void loop() {
 	Read_Frequencies();
     	Print_Frequencies(frequenciesLeft, frequenciesRight);
 	Smoothe(oldL, oldR, frequenciesLeft, frequenciesRight, newL, newR);
 
-<<<<<<< HEAD
-    if (millis() > currentTime + interval){
-        Light(newL, newR, scaledLeft, scaledRight, bandSize, color);
-        currentTime = millis();
-    }
-=======
     	if (millis() > currentTime + interval){
         	Light(newL, newR, scaledLeft, scaledRight, bandSize);
         	currentTime = millis();
     	}
->>>>>>> d27a8afa24e47699ec575a1cbdaac2c7ce3d4cf8
 } 
