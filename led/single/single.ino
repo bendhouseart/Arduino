@@ -2,10 +2,11 @@
 // and settings
 
 #include "FastLED.h"
-#define LED_PIN		13
+#define LED_PIN_R	13
+#define LED_PIN_L		12
 #define COLOR_ORDER	GRB
 #define CHIPSET		WS2811
-#define NUM_LEDS	79
+#define NUM_LEDS	147
 #define FRAMES_PER_SECOND 60 
 #define threshold 80
 
@@ -96,22 +97,21 @@ void Scale_Frequencies(int* leftIn, int* rightIn, int* leftOut, int* rightOut, i
 	}
 } 
 
-void Light(int* left, int* right, int* scaledLeft, int* scaledRight, int bandSize){
+void Light(int* left, int* right, int* scaledLeft, int* scaledRight, int bandSize, int color){
 	int step = bandSize;
-	int color = 0;
 	Scale_Frequencies(left, right, scaledLeft, scaledRight, bandSize);
     Print_Frequencies(scaledLeft, scaledRight);
 	for (int i = 0; i < 7; i++){
         // Uncomment below line for rainbow of colors
-		//color = i*32;
-        
+		//color += 13;
         // Uncomment below for alternating two colors up and down strip
-        if (i%2 == 0){
-            color = 32;
-        } else {
-            color = 0;
-        }
+        //if (i%2 == 0){
+        //    color = 32;
+        //} else {
+        //    color = 0;
+        //}
 		for (int j=(i*bandSize); j < ((i+1)*bandSize); j++){
+			//color += 5;
 			if (j < (scaledLeft[i] + (i*bandSize))){
 				leds[j] = CHSV(color, 255, 200);
 			}
@@ -119,10 +119,8 @@ void Light(int* left, int* right, int* scaledLeft, int* scaledRight, int bandSiz
 				leds[j] = CRGB::Black;
 			}
 		}
-	
 	}
 	FastLED.show();
-
 }
 
 int oldL[7] = {0,0,0,0,0,0,0};
@@ -163,8 +161,9 @@ void setup() {
 	digitalWrite(RESET, LOW);
 	delay(300);
 
-	FastLED.addLeds<CHIPSET, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
-	FastLED.setBrightness( 70 );
+	FastLED.addLeds<CHIPSET, LED_PIN_R, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+	FastLED.addLeds<CHIPSET, LED_PIN_L, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip);
+	FastLED.setBrightness( 255 );
 	Serial.begin(baud);
 	randomSeed(analogRead(0));
 }
@@ -172,7 +171,7 @@ void setup() {
 unsigned long time = millis();
 unsigned long interval = 10;
 unsigned long currentTime = millis();
-
+int color = 0;
 void loop() {
 	Read_Frequencies();
     Print_Frequencies(frequenciesLeft, frequenciesRight);
@@ -180,7 +179,7 @@ void loop() {
 	Smoothe(oldL, oldR, frequenciesLeft, frequenciesRight, newL, newR);
 
     if (millis() > currentTime + interval){
-        Light(newL, newR, scaledLeft, scaledRight, bandSize);
+        Light(newL, newR, scaledLeft, scaledRight, bandSize, color);
         currentTime = millis();
     }
 } 
