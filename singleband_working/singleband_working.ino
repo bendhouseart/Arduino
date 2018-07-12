@@ -2,7 +2,7 @@
 #define LED_PIN     13
 #define COLOR_ORDER GRB
 #define CHIPSET     WS2811
-#define NUM_LEDS    62
+#define NUM_LEDS    124 
 
 #define FRAMES_PER_SECOND 60
 

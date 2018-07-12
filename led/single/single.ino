@@ -37,12 +37,17 @@ int frequenciesRight[7];
 // and read those frequencies (values ranging from 0 to 1023 into their respective
 // left and right channels. The noise floor of the Frequency Analyser appears
 // to be 70 to 80, so values below that floor will be discarded and set to a
-// floor equal to the threshold value.
+// floor equal to the threshold value. As of 3/26/18 Noise is discarded in the
+// scale function, which admittedly in hindsight makes more sense. 
 void Read_Frequencies() {
 	for (int i = 0; i < 7; i++){
 		frequenciesLeft[i] = analogRead(DC_One);
 		frequenciesRight[i] = analogRead(DC_Two);
-/* 		// discarding noise
+		/* inintially I was discarding noise here, but
+		this resulted in too much information loss
+		and led to unresponsiveness of the leds at the strips
+		hence why this is commented out.
+		// discarding noise
 		if (frequenciesLeft[i] < threshold){
 			frequenciesLeft[i] = threshold;
 		}
@@ -54,10 +59,10 @@ void Read_Frequencies() {
         digitalWrite(STROBE, HIGH);
         digitalWrite(STROBE, LOW);
 	}
-	
-	
 }
 
+// For debugging and plotting purposes when using the arduino ide's
+// serial visualizer and plotter.
 void Print_Frequencies(int* frequenciesLeft,  int* frequenciesRight) {
 	for (int i = 0; i < 7; i++){
 		Serial.print(frequenciesLeft[i]);
@@ -68,8 +73,8 @@ void Print_Frequencies(int* frequenciesLeft,  int* frequenciesRight) {
 		Serial.print('\t');
 	}
 	Serial.print('\n');
-
 }
+
 // Here we scale the frequencies read by the Freq. Anal
 // to something representable by our led strip.
 // each band will be divided into it's own second of leds
@@ -97,10 +102,14 @@ void Scale_Frequencies(int* leftIn, int* rightIn, int* leftOut, int* rightOut, i
 	}
 } 
 
-void Light(int* left, int* right, int* scaledLeft, int* scaledRight, int bandSize, int color){
+// This is where the magic happens and the leds are told to light up and light off
+// using the fast led library. As of 3/26/18 this function emulates the a standard
+// frequency analyser as seen on any vintage hifi equipment or computer emulation 
+// software as a graphic eq. etc etc.
+void Light(int* left, int* right, int* scaledLeft, int* scaledRight, int bandSize){
 	int step = bandSize;
 	Scale_Frequencies(left, right, scaledLeft, scaledRight, bandSize);
-    Print_Frequencies(scaledLeft, scaledRight);
+	Print_Frequencies(scaledLeft, scaledRight);
 	for (int i = 0; i < 7; i++){
         // Uncomment below line for rainbow of colors
 		//color += 13;
@@ -123,12 +132,22 @@ void Light(int* left, int* right, int* scaledLeft, int* scaledRight, int bandSiz
 	FastLED.show();
 }
 
+
+// These arrays are used to soley in the function below to make sure
+// that we have smoothe response at our led strip. Without this function
+// the response is too quick and the led strips strobe at you in a 
+// highly unpleasant manner. By simply applying a moving average across
+// the samples taken from the frequency analyser we get a nice response.
+// At the time of this writing (3/26/18) parameters of a interval of 
+// 14 samples as well as only calling the light function every 10ms makes
+// for a good looking graphic eq/visualizer.
 int oldL[7] = {0,0,0,0,0,0,0};
 int oldR[7] = {0,0,0,0,0,0,0};
 int newR[7] = {0,0,0,0,0,0,0};
 int newL[7] = {0,0,0,0,0,0,0};
-int presR[7] = {0,0,0,0,0,0,0};
-int presL[7] = {0,0,0,0,0,0,0};
+int presR[7] = {0,0,0,0,0,0,0}; // These are the values currently sampled from 
+int presL[7] = {0,0,0,0,0,0,0}; // the frequency analyser. They can be done away, I think.
+				
 
 void Smoothe(int* oldL, int* oldR, int* presL , int* presR, int* newL, int* newR){
 	int interval = 14;
@@ -140,6 +159,8 @@ void Smoothe(int* oldL, int* oldR, int* presL , int* presR, int* newL, int* newR
 	}
 } 
 
+
+// Initializing of the Arduino controller and the frequency analyser chip.
 void setup() {
 	// Set Freq. Anal. pin configs.
 	pinMode(STROBE, OUTPUT);
@@ -168,18 +189,31 @@ void setup() {
 	randomSeed(analogRead(0));
 }
 
+// Initialization of timer variables for 10ms refresh rate for light function.
 unsigned long time = millis();
 unsigned long interval = 10;
 unsigned long currentTime = millis();
+<<<<<<< HEAD
 int color = 0;
+=======
+
+
+// Main Loop, does all the work.
+>>>>>>> d27a8afa24e47699ec575a1cbdaac2c7ce3d4cf8
 void loop() {
 	Read_Frequencies();
-    Print_Frequencies(frequenciesLeft, frequenciesRight);
-    
+    	Print_Frequencies(frequenciesLeft, frequenciesRight);
 	Smoothe(oldL, oldR, frequenciesLeft, frequenciesRight, newL, newR);
 
+<<<<<<< HEAD
     if (millis() > currentTime + interval){
         Light(newL, newR, scaledLeft, scaledRight, bandSize, color);
         currentTime = millis();
     }
+=======
+    	if (millis() > currentTime + interval){
+        	Light(newL, newR, scaledLeft, scaledRight, bandSize);
+        	currentTime = millis();
+    	}
+>>>>>>> d27a8afa24e47699ec575a1cbdaac2c7ce3d4cf8
 } 
